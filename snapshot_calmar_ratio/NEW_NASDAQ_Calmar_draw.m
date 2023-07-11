@@ -1,262 +1,272 @@
+% Clear workspace and command window
 clc,clear
 
-filedir = './NEW_NASDAQ100_Calmar/';
+% Set display format to long
+format long;
+filedir = './NEW_NASDAQ_Calmar/';
 filelist = dir([filedir, '*.txt']);
 
+% Load data from file
 load('NASDAQ100.mat'); %stock price matrix(939 weeks)
-wk_return_d1 = Assets_Returns(1:596, :)';
-wk_return_b1 = Index_Returns(1:596, :)';
-[M, N] = size(wk_return_d1);
-rf_04_16=load('rf_04_16a.txt',','); %risk free
-rt_test = rf_04_16(N/2+1:N);
+asset_returns = Assets_Returns(1:1362, :)';
+index_returns = Index_Returns(1:1362, :)';
 
-My_wk_rt_temp = 0; 
-ac_wk_rt_temp = 0;
-ew_wk_rt_temp = 0;
-ew_ac_wk_rt_temp = 0;
-xt_all = zeros(M, N/2);
-x_ew = 1 / M * ones(M, 1);
-x_ew_all = 1 / M * ones(M, N/2);
-esr = zeros(1, N/2);
-esr_ew = zeros(1, N/2);
-My_wk_rt = zeros(1, N/2);
-ac_wk_rt = zeros(1, N/2);
-ew_wk_rt = zeros(1, N/2);
-ew_ac_wk_rt = zeros(1, N/2);
-esr_a = zeros(1, N/2);
-theta = 0.95;
-ratio_p_all = zeros(1, N/2);
-ratio_a_all = zeros(1, N/2);
+[num_assets, num_weeks] = size(asset_returns);
+risk_free_rate=load('rf_04_16a.txt',','); %risk free
+rt_test = risk_free_rate(num_weeks/2+1:num_weeks);
 
-%solutions
-disp("Solution started")
+Curr_week_temp = 0; 
+Actual_week_rt_temp = 0;
+Equal_week_rt_temp = 0;
+Equal_actual_week_rt_temp = 0;
+portfolio_weights_all = zeros(num_assets, num_weeks/2);
+equal_weights = 1 / num_assets * ones(num_assets, 1);
+equal_weights_all = 1 / num_assets * ones(num_assets, num_weeks/2);
+ratio = zeros(1, num_weeks/2);
+ratio_ew = zeros(1, num_weeks/2);
+Curr_week_rt = zeros(1, num_weeks/2);
+Actual_week_rt = zeros(1, num_weeks/2);
+Equal_week_rt = zeros(1, num_weeks/2);
+Equal_week_wk_rt = zeros(1, num_weeks/2);
+ratio_a = zeros(1, num_weeks/2);
+ratio_p_all = zeros(1, num_weeks/2);
+ratio_a_all = zeros(1, num_weeks/2);
+
 %CZeSD
 x_czesd = load('../data/BCST_Solutions/NASDAQ100/OptPortfolios_CZeSD_NASDAQ100.txt');
-xt_czesd = zeros(M, N);
-for ii = 1:N
-    if ii>52
-        xt_czesd(:, ii) = x_czesd(:, ceil((ii-52)/12));
+portfolio_czesd = zeros(num_assets, num_weeks);
+for weeks = 1:num_weeks
+    if weeks>52
+        portfolio_czesd(:, weeks) = x_czesd(:, ceil((weeks-52)/12));
     end
 end
 
 %KP_SSD
 x_kpssd = load('../data/BCST_Solutions/NASDAQ100/OptPortfolios_KP_SSD_NASDAQ100.txt');
-xt_kpssd = zeros(M, N);
-for ii = 1:N
-    if ii>52
-        xt_kpssd(:, ii) = x_kpssd(:, ceil((ii-52)/12));
+portfolio_kpssd = zeros(num_assets, num_weeks);
+for weeks = 1:num_weeks
+    if weeks>52
+        portfolio_kpssd(:, weeks) = x_kpssd(:, ceil((weeks-52)/12));
     end
 end
 
 %L_SSD
 x_lssd = load('../data/BCST_Solutions/NASDAQ100/OptPortfolios_L_SSD_NASDAQ100.txt');
-xt_lssd = zeros(M, N);
-for ii = 1:N
-    if ii>52
-        xt_lssd(:, ii) = x_lssd(:, ceil((ii-52)/12));
+portfolio_lssd = zeros(num_assets, num_weeks);
+for weeks = 1:num_weeks
+    if weeks>52
+        portfolio_lssd(:, weeks) = x_lssd(:, ceil((weeks-52)/12));
     end
 end
 
 %LR_ASSD
 x_lrassd = load('../data/BCST_Solutions/NASDAQ100/OptPortfolios_LR_ASSD_NASDAQ100.txt');
-xt_lrassd = zeros(M, N);
-for ii = 1:N
-    if ii>52
-        xt_lrassd(:, ii) = x_lrassd(:, ceil((ii-52)/12));
+portfolio_lrassd = zeros(num_assets, num_weeks);
+for weeks = 1:num_weeks
+    if weeks>52
+        portfolio_lrassd(:, weeks) = x_lrassd(:, ceil((weeks-52)/12));
     end
 end
 
-%Mean-Variance
-disp("MV Reached")
+%MV
 x_mv = load('../data/BCST_Solutions/NASDAQ100/OptPortfolios_MeanVar_NASDAQ100.txt');
-xt_mv = zeros(M, N);
-for ii = 1:N
-    if ii>52
-        xt_mv(:, ii) = x_mv(:, ceil((ii-52)/12));
+portfolio_mv = zeros(num_assets, num_weeks);
+for weeks = 1:num_weeks
+    if weeks>52
+        portfolio_mv(:, weeks) = x_mv(:, ceil((weeks-52)/12));
     end
 end
 
 %RMZ_SSD
 x_rmzssd = load('../data/BCST_Solutions/NASDAQ100/OptPortfolios_RMZ_SSD_NASDAQ100.txt');
-xt_rmzssd = zeros(M, N);
-for ii = 1:N
-    if ii>52
-        xt_rmzssd(:, ii) = x_rmzssd(:, ceil((ii-52)/12));
+portfolio_rmzssd = zeros(num_assets, num_weeks);
+for weeks = 1:num_weeks
+    if weeks>52
+        portfolio_rmzssd(:, weeks) = x_rmzssd(:, ceil((weeks-52)/12));
     end
 end
-disp("Solution ended")
-for i = (N/2+1):N 
-    i
-    wk_return_d1_train = wk_return_d1(:, 1:i-1); %training
-    wk_return_d1_test = wk_return_d1(:, i); 
-    rf = rf_04_16(i); 
-    miu = mean(wk_return_d1_train, 2);
-    filename = filelist(i-N/2);
-    xt = load([filedir,filename.name]);
-    xt_all(:,i-N/2) = xt;
+
+disp("NO Started")
+for week = (num_weeks/2+1):num_weeks 
+    disp(week)
+    asset_return_d1_train = asset_returns(:, 1:week-1); %training
+    asset_return_d1_test = asset_returns(:, week); 
+    rf = risk_free_rate(week); 
+    miu = mean(asset_return_d1_train, 2);
+    filename = filelist(week-num_weeks/2);
+    portfolio = load([filedir,filename.name]);
+    portfolio_weights_all(:,week-num_weeks/2) = portfolio;
     
-    %ESR_p
-    My_wk_rt_temp = xt' * wk_return_d1_test - rf;
-    My_wk_rt(i-N/2) = My_wk_rt_temp;
-    evar0 = Calmar_Var_p(i-N/2, wk_return_d1, xt_all);
-    ratio_my = sum(My_wk_rt) / (i-N/2) / evar0;
-    esr(i-N/2) = ratio_my;
+    %calmar_ratio_p
+    Curr_week_temp = portfolio' * asset_return_d1_test - rf;
+    Curr_week_rt(week-num_weeks/2) = Curr_week_temp;
+    max_drawdown0 = Calmar_Var_p(week-num_weeks/2, asset_returns, portfolio_weights_all);
+    ratio_my = sum(Curr_week_rt) / (week-num_weeks/2) / max_drawdown0;
+    ratio(week-num_weeks/2) = ratio_my;
 
     %cumulative return
-    ac_wk_rt_temp = ac_wk_rt_temp + xt' * wk_return_d1_test;
-    ac_wk_rt(i-N/2) = ac_wk_rt_temp;
+    Actual_week_rt_temp = Actual_week_rt_temp + portfolio' * asset_return_d1_test;
+    Actual_week_rt(week-num_weeks/2) = Actual_week_rt_temp;
 
-    %esr_a
-    
-    My_wk_rt_a_temp = xt' * mean(wk_return_d1_train, 2) - rf;
-    ratio_a_my = My_wk_rt_a_temp / Calmar_Var_a(i, wk_return_d1, xt);
-    esr_a(i-N/2) = ratio_a_my;
-  
+    %calmar_ratio_a
+    My_wk_rt_a_temp = portfolio' * mean(asset_return_d1_train, 2) - rf;
+    ratio_a_my = My_wk_rt_a_temp / Calmar_Var_a(week, asset_returns, portfolio);
+    ratio_a(week-num_weeks/2) = ratio_a_my;
 
     %equally weighted
-    ew_wk_rt_temp = x_ew' * wk_return_d1_test - rf;
-    ew_wk_rt(i-N/2) = ew_wk_rt_temp;
-    ratio_ew = sum(ew_wk_rt) / (i-N/2) / Calmar_Var_p(i-N/2, wk_return_d1, x_ew_all);
-    esr_ew(i-N/2) = ratio_ew;
+    Equal_week_rt_temp = equal_weights' * asset_return_d1_test - rf;
+    Equal_week_rt(week-num_weeks/2) = Equal_week_rt_temp;
+    ratio_ew = sum(Equal_week_rt) / (week-num_weeks/2) / Calmar_Var_p(week-num_weeks/2, asset_returns, equal_weights_all);
+    ratio_ew(week-num_weeks/2) = ratio_ew;
     
-    ew_ac_wk_rt_temp = ew_ac_wk_rt_temp + x_ew' * wk_return_d1_test;
-    ew_ac_wk_rt(i-N/2) = ew_ac_wk_rt_temp;
+    Equal_actual_week_rt_temp = Equal_actual_week_rt_temp + equal_weights' * asset_return_d1_test;
+    Equal_week_wk_rt(week-num_weeks/2) = Equal_actual_week_rt_temp;
     
 end
-
-%index
-
-esr_index = zeros(1, N/2);%初始化
+disp("NO Ended")
+disp("Index Started")
+ratio_index = zeros(1, num_weeks/2);
 index_wk_rt = 0;
-for i = N/2+1:N
-    index_wk_rt = index_wk_rt + wk_return_b1(:, i) - rf_04_16(:, i);
-    %[~, evar_index, a] = fmincon(@(rho) EVaR_p_index(i, wk_return_b1, rho, theta), ...
-    %0.01, [], [], [], [], 0, [], []);
-    %if (a ~= 1)
-     %   disp(i)
-    %end
-    evar_index = Calmar_Var_p_index(i-N/2, wk_return_b1);
-    esr_index(:, i-N/2) = index_wk_rt / (i-N/2) / evar_index;
+for week = num_weeks/2+1:num_weeks
+    index_wk_rt = index_wk_rt + index_returns(:, week) - risk_free_rate(:, week);
+    evar_index = Calmar_Var_p_index(week-num_weeks/2, index_returns);
+    ratio_index(:, week-num_weeks/2) = index_wk_rt / (week-num_weeks/2) / evar_index;
 end
-
-
-
-xt_mv_all = zeros(M, N/2);
-esr_mv = zeros(1, N/2);
-for ii = (N/2+1):N 
-    wk_return_d1_train = wk_return_d1(:, 1:ii-1); %training
-    wk_return_d1_test = wk_return_d1(:, ii); 
-    rf = rf_04_16(ii); 
-    miu = mean(wk_return_d1_train, 2);
-    xt_mv_all(:,ii-N/2) = xt_mv(:, ii);
+disp("Index Ended")
+disp("MV Started")
+portfolio_mv_all = zeros(num_assets, num_weeks/2);
+ratio_mv = zeros(1, num_weeks/2);
+for weeks = (num_weeks/2+1):num_weeks 
+    disp(weeks)
+    asset_return_d1_train = asset_returns(:, 1:weeks-1); %training
+    asset_return_d1_test = asset_returns(:, weeks); 
+    rf = risk_free_rate(weeks); 
+    miu = mean(asset_return_d1_train, 2);
+    portfolio_mv_all(:,weeks-num_weeks/2) = portfolio_mv(:, weeks);
     
-    %ESR_p
-    My_wk_rt_temp = xt_mv(:, ii)' * wk_return_d1_test - rf;
-    My_wk_rt(ii-N/2) = My_wk_rt_temp;
-    evar0 = Calmar_Var_p(ii-N/2, wk_return_d1, xt_mv_all);
-    ratio_my = sum(My_wk_rt) / (ii-N/2) / evar0;
-    esr_mv(ii-N/2) = ratio_my;
+    Curr_week_temp = portfolio_mv(:, weeks)' * asset_return_d1_test - rf;
+    Curr_week_rt(weeks-num_weeks/2) = Curr_week_temp;
+    ratio0 = Calmar_Var_p(weeks-num_weeks/2, asset_returns, portfolio_mv_all);
+    ratio_my = sum(Curr_week_rt) / (weeks-num_weeks/2) / ratio0;
+    ratio_mv(weeks-num_weeks/2) = ratio_my;
 end
+disp("MV Ended")
+disp("LSSD Started")
+portfolio_lssd_all = zeros(num_assets, num_weeks/2);
+ratio_lssd = zeros(1, num_weeks/2);
+for weeks = (num_weeks/2+1):num_weeks 
+    disp(weeks)
+    asset_return_d1_train = asset_returns(:, 1:weeks-1); %training
+    asset_return_d1_test = asset_returns(:, weeks); 
+    rf = risk_free_rate(weeks); 
+    miu = mean(asset_return_d1_train, 2);
+    portfolio_lssd_all(:,weeks-num_weeks/2) = portfolio_lssd(:, weeks);
 
-xt_lssd_all = zeros(M, N/2);
-esr_lssd = zeros(1, N/2);
-for ii = (N/2+1):N 
-    wk_return_d1_train = wk_return_d1(:, 1:ii-1); %training
-    wk_return_d1_test = wk_return_d1(:, ii); 
-    rf = rf_04_16(ii); 
-    miu = mean(wk_return_d1_train, 2);
-    xt_lssd_all(:,ii-N/2) = xt_lssd(:, ii);
+    Curr_week_temp = portfolio_lssd(:, weeks)' * asset_return_d1_test - rf;
+    Curr_week_rt(weeks-num_weeks/2) = Curr_week_temp;
+    ratio0 = Calmar_Var_p(weeks-num_weeks/2, asset_returns, portfolio_lssd_all);
+    ratio_my = sum(Curr_week_rt) / (weeks-num_weeks/2) / ratio0;
+    ratio_lssd(weeks-num_weeks/2) = ratio_my;
+end
+disp("LSSD Ended")
+disp("LRASSD Started")
+portfolio_lrassd_all = zeros(num_assets, num_weeks/2);
+ratio_lrassd = zeros(1, num_weeks/2);
+for weeks = (num_weeks/2+1):num_weeks 
+    disp(weeks)
+    asset_return_d1_train = asset_returns(:, 1:weeks-1); %training
+    asset_return_d1_test = asset_returns(:, weeks); 
+    rf = risk_free_rate(weeks); 
+    miu = mean(asset_return_d1_train, 2);
+    portfolio_lrassd_all(:,weeks-num_weeks/2) = portfolio_lrassd(:, weeks);
     
-    %ESR_p
-    My_wk_rt_temp = xt_lssd(:, ii)' * wk_return_d1_test - rf;
-    My_wk_rt(ii-N/2) = My_wk_rt_temp;
-    evar0 = Calmar_Var_p(ii-N/2, wk_return_d1, xt_lssd_all);
-    ratio_my = sum(My_wk_rt) / (ii-N/2) / evar0;
-    esr_lssd(ii-N/2) = ratio_my;
+    Curr_week_temp = portfolio_lrassd(:, weeks)' * asset_return_d1_test - rf;
+    Curr_week_rt(weeks-num_weeks/2) = Curr_week_temp;
+    ratio0 = Calmar_Var_p(weeks-num_weeks/2, asset_returns, portfolio_lrassd_all);
+    ratio_my = sum(Curr_week_rt) / (weeks-num_weeks/2) / ratio0;
+    ratio_lrassd(weeks-num_weeks/2) = ratio_my;
 end
+disp("LRASSD Ended")
+disp("RMZSSD Started")
+portfolio_rmzssd_all = zeros(num_assets, num_weeks/2);
+ratio_rmzssd = zeros(1, num_weeks/2);
+for weeks = (num_weeks/2+1):num_weeks 
+    disp(weeks)
+    asset_return_d1_train = asset_returns(:, 1:weeks-1); %training
+    asset_return_d1_test = asset_returns(:, weeks); 
+    rf = risk_free_rate(weeks); 
+    miu = mean(asset_return_d1_train, 2);
+    portfolio_rmzssd_all(:,weeks-num_weeks/2) = portfolio_rmzssd(:, weeks);
 
-xt_lrassd_all = zeros(M, N/2);
-esr_lrassd = zeros(1, N/2);
-for ii = (N/2+1):N 
-    wk_return_d1_train = wk_return_d1(:, 1:ii-1); %training
-    wk_return_d1_test = wk_return_d1(:, ii); 
-    rf = rf_04_16(ii); 
-    miu = mean(wk_return_d1_train, 2);
-    xt_lrassd_all(:,ii-N/2) = xt_lrassd(:, ii);
-    
-    %ESR_p
-    My_wk_rt_temp = xt_lrassd(:, ii)' * wk_return_d1_test - rf;
-    My_wk_rt(ii-N/2) = My_wk_rt_temp;
-    evar0 = Calmar_Var_p(ii-N/2, wk_return_d1, xt_lrassd_all);
-    ratio_my = sum(My_wk_rt) / (ii-N/2) / evar0;
-    esr_lrassd(ii-N/2) = ratio_my;
+    Curr_week_temp = portfolio_rmzssd(:, weeks)' * asset_return_d1_test - rf;
+    Curr_week_rt(weeks-num_weeks/2) = Curr_week_temp;
+    ratio0 = Calmar_Var_p(weeks-num_weeks/2, asset_returns, portfolio_rmzssd_all);
+    ratio_my = sum(Curr_week_rt) / (weeks-num_weeks/2) / ratio0;
+    ratio_rmzssd(weeks-num_weeks/2) = ratio_my;
 end
+disp("RMZSSD Ended")
+disp("KPSSD Started")
+portfolio_kpssd_all = zeros(num_assets, num_weeks/2);
+ratio_kpssd = zeros(1, num_weeks/2);
+for weeks = (num_weeks/2+1):num_weeks 
+    disp(weeks)
+    asset_return_d1_train = asset_returns(:, 1:weeks-1); %training
+    asset_return_d1_test = asset_returns(:, weeks); 
+    rf = risk_free_rate(weeks); 
+    miu = mean(asset_return_d1_train, 2);
+    portfolio_kpssd_all(:,weeks-num_weeks/2) = portfolio_kpssd(:, weeks);
 
-xt_rmzssd_all = zeros(M, N/2);
-esr_rmzssd = zeros(1, N/2);
-for ii = (N/2+1):N 
-    wk_return_d1_train = wk_return_d1(:, 1:ii-1); %training
-    wk_return_d1_test = wk_return_d1(:, ii); 
-    rf = rf_04_16(ii); 
-    miu = mean(wk_return_d1_train, 2);
-    xt_rmzssd_all(:,ii-N/2) = xt_rmzssd(:, ii);
-    
-    %ESR_p
-    My_wk_rt_temp = xt_rmzssd(:, ii)' * wk_return_d1_test - rf;
-    My_wk_rt(ii-N/2) = My_wk_rt_temp;
-    evar0 = Calmar_Var_p(ii-N/2, wk_return_d1, xt_rmzssd_all);
-    ratio_my = sum(My_wk_rt) / (ii-N/2) / evar0;
-    esr_rmzssd(ii-N/2) = ratio_my;
+    Curr_week_temp = portfolio_kpssd(:, weeks)' * asset_return_d1_test - rf;
+    Curr_week_rt(weeks-num_weeks/2) = Curr_week_temp;
+    ratio0 = Calmar_Var_p(weeks-num_weeks/2, asset_returns, portfolio_kpssd_all);
+    ratio_my = sum(Curr_week_rt) / (weeks-num_weeks/2) / ratio0;
+    ratio_kpssd(weeks-num_weeks/2) = ratio_my;
 end
+disp("KPSSD Ended")
+disp("CZESD Started")
+portfolio_czesd_all = zeros(num_assets, num_weeks/2);
+ratio_czesd = zeros(1, num_weeks/2);
+for weeks = (num_weeks/2+1):num_weeks 
+    disp(weeks)
+    asset_return_d1_train = asset_returns(:, 1:weeks-1); %training
+    asset_return_d1_test = asset_returns(:, weeks); 
+    rf = risk_free_rate(weeks); 
+    miu = mean(asset_return_d1_train, 2);
+    portfolio_czesd_all(:,weeks-num_weeks/2) = portfolio_czesd(:, weeks);
 
-xt_kpssd_all = zeros(M, N/2);
-esr_kpssd = zeros(1, N/2);
-for ii = (N/2+1):N 
-    wk_return_d1_train = wk_return_d1(:, 1:ii-1); %training
-    wk_return_d1_test = wk_return_d1(:, ii); 
-    rf = rf_04_16(ii); 
-    miu = mean(wk_return_d1_train, 2);
-    xt_kpssd_all(:,ii-N/2) = xt_kpssd(:, ii);
-    
-    %ESR_p
-    My_wk_rt_temp = xt_kpssd(:, ii)' * wk_return_d1_test - rf;
-    My_wk_rt(ii-N/2) = My_wk_rt_temp;
-    evar0 = Calmar_Var_p(ii-N/2, wk_return_d1, xt_kpssd_all);
-    ratio_my = sum(My_wk_rt) / (ii-N/2) / evar0;
-    esr_kpssd(ii-N/2) = ratio_my;
+    Curr_week_temp = portfolio_czesd(:, weeks)' * asset_return_d1_test - rf;
+    Curr_week_rt(weeks-num_weeks/2) = Curr_week_temp;
+    ratio0 = Calmar_Var_p(weeks-num_weeks/2, asset_returns, portfolio_czesd_all);
+    ratio_my = sum(Curr_week_rt) / (weeks-num_weeks/2) / ratio0;
+    ratio_czesd(weeks-num_weeks/2) = ratio_my;
 end
+disp("CZESD Ended")
 
-xt_czesd_all = zeros(M, N/2);
-esr_czesd = zeros(1, N/2);
-for ii = (N/2+1):N 
-    wk_return_d1_train = wk_return_d1(:, 1:ii-1); %training
-    wk_return_d1_test = wk_return_d1(:, ii); 
-    rf = rf_04_16(ii); 
-    miu = mean(wk_return_d1_train, 2);
-    xt_czesd_all(:,ii-N/2) = xt_czesd(:, ii);
-    
-    %ESR_p
-    My_wk_rt_temp = xt_czesd(:, ii)' * wk_return_d1_test - rf;
-    My_wk_rt(ii-N/2) = My_wk_rt_temp;
-    evar0 = Calmar_Var_p(ii-N/2, wk_return_d1, xt_czesd_all);
-    ratio_my = sum(My_wk_rt) / (ii-N/2) / evar0;
-    esr_czesd(ii-N/2) = ratio_my;
-end
+ratio_yearly = ratio * (num_weeks/13.83)^0.5;
+ratio_ew_yearly = ratio_ew * (num_weeks/13.83)^0.5;
+ratio_index_yearly = ratio_index * (num_weeks/13.83)^0.5;
+ratio_mv_yearly = ratio_mv * (num_weeks/13.83)^0.5;
+ratio_lssd_yearly = ratio_lssd * (num_weeks/13.83)^0.5;
+ratio_lrassd_yearly = ratio_lrassd * (num_weeks/13.83)^0.5;
+ratio_rmzssd_yearly = ratio_rmzssd * (num_weeks/13.83)^0.5;
+ratio_kpssd_yearly = ratio_kpssd * (num_weeks/13.83)^0.5;
+ratio_czesd_yearly = ratio_czesd * (num_weeks/13.83)^0.5;
 
-esr_yearly = esr * (N/11.5)^0.5;
-esr_ew_yearly = esr_ew * (N/11.5)^0.5;
+disp('solution EW IDX')
+ratio_yearly(end)
+ratio_ew_yearly(end)
+ratio_index_yearly(end)
 
-esr_index_yearly = esr_index * (N/11.5)^0.5;
-esr_mv_yearly = esr_mv * (N/11.5)^0.5;
-esr_lssd_yearly = esr_lssd * (N/11.5)^0.5;
-esr_lrassd_yearly = esr_lrassd * (N/11.5)^0.5;
-esr_rmzssd_yearly = esr_rmzssd * (N/11.5)^0.5;
-esr_kpssd_yearly = esr_kpssd * (N/11.5)^0.5;
-esr_czesd_yearly = esr_czesd * (N/11.5)^0.5;
+disp('solution MV LSSD LRASSD RMZSSD KPSSD CZESD')
+ratio_mv_yearly(end)
+ratio_lssd_yearly(end)
+ratio_lrassd_yearly(end)
+ratio_rmzssd_yearly(end)
+ratio_kpssd_yearly(end)
+ratio_czesd_yearly(end)
 
-%开始画图
-
-time = [1:N/2];
+%Plotting
+time = 1:num_weeks/2;
 color=[1,0.84314,0;
        0.80392,0.36078,0.36078;
        0,0.749021,1;
@@ -272,13 +282,14 @@ linewidth_gca = 1.6;
 fontsize_gca = 24;
 fontsize_label = 28;
 fontsize_legend = 20;
-plot(time, esr_a(1:N/2), '-', 'linewidth', 1.6, 'markersize', marksize, 'color', [0 0.80784 0.81961]);
+plot(time, ratio_a(1:num_weeks/2), '-', 'linewidth', 1.6, 'markersize', marksize, 'color', [0 0.80784 0.81961]);
 hold on
-plot(time, esr(1:N/2), '--', 'linewidth', 1.6, 'markersize', marksize, 'color', '#B8860B');
+plot(time, ratio(1:num_weeks/2), '--', 'linewidth', 1.6, 'markersize', marksize, 'color', '#B8860B');
 hold on
-plot(time, esr_ew(1:N/2), '-.', 'linewidth', 1.6, 'markersize', marksize, 'color', 'r');
+plot(time, ratio_ew(1:num_weeks/2), '-.', 'linewidth', 1.6, 'markersize', marksize, 'color', 'r');
 hold on
-plot(time, esr_index(1:N/2), ':', 'linewidth', 1.6, 'markersize', marksize, 'color', 'm');
+plot(time, ratio_index(1:num_weeks/2), ':', 'linewidth', 1.6, 'markersize', marksize, 'color', 'm');
+
 xlim([1 N/2])
 ylim([0 0.14])
 xticks([20 72 124 177 229 281])
@@ -286,27 +297,12 @@ xticklabels({'2011', '2012', '2013', '2014', '2015', '2016'})
 h = legend('NO$_{\rm \bf a}$', 'NO$_{\rm \bf p}$', 'EW', 'MI');
 set(h,'fontsize',fontsize_legend, 'interpreter', 'latex');
 set(gca, 'linewidth', linewidth_gca, 'fontsize', fontsize_gca);
-%set(gca, 'GridLineStyle', '--');
 ylabel('ESR$_{\rm \bf p}$vs ESR$_{\rm \bf a}$', 'interpreter', 'latex', 'fontsize', fontsize_label)   ;
-title('NASDAQ 100'); % 标题
+title('NASDAQ 100');
 hold on
 
 hfig3 = figure(3);
-figWidth = 16;  % 设置图片宽度
-figHeight = 10;  % 设置图片高度
-set(hfig3,'PaperUnits','centimeters'); % 图片尺寸所用单位
+figWidth = 16;
+figHeight = 10;
+set(hfig3,'PaperUnits','centimeters');
 set(hfig3,'PaperPosition',[0 0 figWidth figHeight]);
-
-%各个esr的最终值比较
-esr_yearly(end)
-esr_ew_yearly(end)
-
-esr_index_yearly(end)
-
-disp('solution')
-esr_mv_yearly(end)
-esr_lssd_yearly(end)
-esr_lrassd_yearly(end)
-esr_rmzssd_yearly(end)
-esr_kpssd_yearly(end)
-esr_czesd_yearly(end)

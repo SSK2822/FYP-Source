@@ -98,7 +98,7 @@ ratio_index_yearly(end)
 
 
 %plotting
-time = [1:N/2];
+time = 1:N/2;
 color=[1,0.84314,0;
        0.80392,0.36078,0.36078;
        0,0.749021,1;

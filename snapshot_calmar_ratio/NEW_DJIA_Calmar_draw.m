@@ -89,37 +89,37 @@ end
 disp("NO Started")
 for week = (num_weeks/2+1):num_weeks 
     disp(week)
-    wk_return_d1_train = asset_returns(:, 1:week-1); %training
-    wk_return_d1_test = asset_returns(:, week); 
+    asset_return_d1_train = asset_returns(:, 1:week-1); %training
+    asset_return_d1_test = asset_returns(:, week); 
     rf = risk_free_rate(week); 
-    miu = mean(wk_return_d1_train, 2);
+    miu = mean(asset_return_d1_train, 2);
     filename = filelist(week-num_weeks/2);
     portfolio = load([filedir,filename.name]);
     portfolio_weights_all(:,week-num_weeks/2) = portfolio;
     
     %calmar_ratio_p
-    Curr_week_temp = portfolio' * wk_return_d1_test - rf;
+    Curr_week_temp = portfolio' * asset_return_d1_test - rf;
     Curr_week_rt(week-num_weeks/2) = Curr_week_temp;
     max_drawdown0 = Calmar_Var_p(week-num_weeks/2, asset_returns, portfolio_weights_all);
     ratio_my = sum(Curr_week_rt) / (week-num_weeks/2) / max_drawdown0;
     ratio(week-num_weeks/2) = ratio_my;
 
     %cumulative return
-    Actual_week_rt_temp = Actual_week_rt_temp + portfolio' * wk_return_d1_test;
+    Actual_week_rt_temp = Actual_week_rt_temp + portfolio' * asset_return_d1_test;
     Actual_week_rt(week-num_weeks/2) = Actual_week_rt_temp;
 
     %calmar_ratio_a
-    My_wk_rt_a_temp = portfolio' * mean(wk_return_d1_train, 2) - rf;
+    My_wk_rt_a_temp = portfolio' * mean(asset_return_d1_train, 2) - rf;
     ratio_a_my = My_wk_rt_a_temp / Calmar_Var_a(week, asset_returns, portfolio);
     ratio_a(week-num_weeks/2) = ratio_a_my;
 
     %equally weighted
-    Equal_week_rt_temp = equal_weights' * wk_return_d1_test - rf;
+    Equal_week_rt_temp = equal_weights' * asset_return_d1_test - rf;
     Equal_week_rt(week-num_weeks/2) = Equal_week_rt_temp;
     ratio_ew = sum(Equal_week_rt) / (week-num_weeks/2) / Calmar_Var_p(week-num_weeks/2, asset_returns, equal_weights_all);
     ratio_ew(week-num_weeks/2) = ratio_ew;
     
-    Equal_actual_week_rt_temp = Equal_actual_week_rt_temp + equal_weights' * wk_return_d1_test;
+    Equal_actual_week_rt_temp = Equal_actual_week_rt_temp + equal_weights' * asset_return_d1_test;
     Equal_week_wk_rt(week-num_weeks/2) = Equal_actual_week_rt_temp;
     
 end
@@ -138,16 +138,16 @@ portfolio_mv_all = zeros(num_assets, num_weeks/2);
 ratio_mv = zeros(1, num_weeks/2);
 for weeks = (num_weeks/2+1):num_weeks 
     disp(weeks)
-    wk_return_d1_train = asset_returns(:, 1:weeks-1); %training
-    wk_return_d1_test = asset_returns(:, weeks); 
+    asset_return_d1_train = asset_returns(:, 1:weeks-1); %training
+    asset_return_d1_test = asset_returns(:, weeks); 
     rf = risk_free_rate(weeks); 
-    miu = mean(wk_return_d1_train, 2);
+    miu = mean(asset_return_d1_train, 2);
     portfolio_mv_all(:,weeks-num_weeks/2) = portfolio_mv(:, weeks);
     
-    Curr_week_temp = portfolio_mv(:, weeks)' * wk_return_d1_test - rf;
+    Curr_week_temp = portfolio_mv(:, weeks)' * asset_return_d1_test - rf;
     Curr_week_rt(weeks-num_weeks/2) = Curr_week_temp;
-    evar0 = Calmar_Var_p(weeks-num_weeks/2, asset_returns, portfolio_mv_all);
-    ratio_my = sum(Curr_week_rt) / (weeks-num_weeks/2) / evar0;
+    ratio0 = Calmar_Var_p(weeks-num_weeks/2, asset_returns, portfolio_mv_all);
+    ratio_my = sum(Curr_week_rt) / (weeks-num_weeks/2) / ratio0;
     ratio_mv(weeks-num_weeks/2) = ratio_my;
 end
 disp("MV Ended")
@@ -156,16 +156,16 @@ portfolio_lssd_all = zeros(num_assets, num_weeks/2);
 ratio_lssd = zeros(1, num_weeks/2);
 for weeks = (num_weeks/2+1):num_weeks 
     disp(weeks)
-    wk_return_d1_train = asset_returns(:, 1:weeks-1); %training
-    wk_return_d1_test = asset_returns(:, weeks); 
+    asset_return_d1_train = asset_returns(:, 1:weeks-1); %training
+    asset_return_d1_test = asset_returns(:, weeks); 
     rf = risk_free_rate(weeks); 
-    miu = mean(wk_return_d1_train, 2);
+    miu = mean(asset_return_d1_train, 2);
     portfolio_lssd_all(:,weeks-num_weeks/2) = portfolio_lssd(:, weeks);
 
-    Curr_week_temp = portfolio_lssd(:, weeks)' * wk_return_d1_test - rf;
+    Curr_week_temp = portfolio_lssd(:, weeks)' * asset_return_d1_test - rf;
     Curr_week_rt(weeks-num_weeks/2) = Curr_week_temp;
-    evar0 = Calmar_Var_p(weeks-num_weeks/2, asset_returns, portfolio_lssd_all);
-    ratio_my = sum(Curr_week_rt) / (weeks-num_weeks/2) / evar0;
+    ratio0 = Calmar_Var_p(weeks-num_weeks/2, asset_returns, portfolio_lssd_all);
+    ratio_my = sum(Curr_week_rt) / (weeks-num_weeks/2) / ratio0;
     ratio_lssd(weeks-num_weeks/2) = ratio_my;
 end
 disp("LSSD Ended")
@@ -174,16 +174,16 @@ portfolio_lrassd_all = zeros(num_assets, num_weeks/2);
 ratio_lrassd = zeros(1, num_weeks/2);
 for weeks = (num_weeks/2+1):num_weeks 
     disp(weeks)
-    wk_return_d1_train = asset_returns(:, 1:weeks-1); %training
-    wk_return_d1_test = asset_returns(:, weeks); 
+    asset_return_d1_train = asset_returns(:, 1:weeks-1); %training
+    asset_return_d1_test = asset_returns(:, weeks); 
     rf = risk_free_rate(weeks); 
-    miu = mean(wk_return_d1_train, 2);
+    miu = mean(asset_return_d1_train, 2);
     portfolio_lrassd_all(:,weeks-num_weeks/2) = portfolio_lrassd(:, weeks);
     
-    Curr_week_temp = portfolio_lrassd(:, weeks)' * wk_return_d1_test - rf;
+    Curr_week_temp = portfolio_lrassd(:, weeks)' * asset_return_d1_test - rf;
     Curr_week_rt(weeks-num_weeks/2) = Curr_week_temp;
-    evar0 = Calmar_Var_p(weeks-num_weeks/2, asset_returns, portfolio_lrassd_all);
-    ratio_my = sum(Curr_week_rt) / (weeks-num_weeks/2) / evar0;
+    ratio0 = Calmar_Var_p(weeks-num_weeks/2, asset_returns, portfolio_lrassd_all);
+    ratio_my = sum(Curr_week_rt) / (weeks-num_weeks/2) / ratio0;
     ratio_lrassd(weeks-num_weeks/2) = ratio_my;
 end
 disp("LRASSD Ended")
@@ -192,16 +192,16 @@ portfolio_rmzssd_all = zeros(num_assets, num_weeks/2);
 ratio_rmzssd = zeros(1, num_weeks/2);
 for weeks = (num_weeks/2+1):num_weeks 
     disp(weeks)
-    wk_return_d1_train = asset_returns(:, 1:weeks-1); %training
-    wk_return_d1_test = asset_returns(:, weeks); 
+    asset_return_d1_train = asset_returns(:, 1:weeks-1); %training
+    asset_return_d1_test = asset_returns(:, weeks); 
     rf = risk_free_rate(weeks); 
-    miu = mean(wk_return_d1_train, 2);
+    miu = mean(asset_return_d1_train, 2);
     portfolio_rmzssd_all(:,weeks-num_weeks/2) = portfolio_rmzssd(:, weeks);
 
-    Curr_week_temp = portfolio_rmzssd(:, weeks)' * wk_return_d1_test - rf;
+    Curr_week_temp = portfolio_rmzssd(:, weeks)' * asset_return_d1_test - rf;
     Curr_week_rt(weeks-num_weeks/2) = Curr_week_temp;
-    evar0 = Calmar_Var_p(weeks-num_weeks/2, asset_returns, portfolio_rmzssd_all);
-    ratio_my = sum(Curr_week_rt) / (weeks-num_weeks/2) / evar0;
+    ratio0 = Calmar_Var_p(weeks-num_weeks/2, asset_returns, portfolio_rmzssd_all);
+    ratio_my = sum(Curr_week_rt) / (weeks-num_weeks/2) / ratio0;
     ratio_rmzssd(weeks-num_weeks/2) = ratio_my;
 end
 disp("RMZSSD Ended")
@@ -210,16 +210,16 @@ portfolio_kpssd_all = zeros(num_assets, num_weeks/2);
 ratio_kpssd = zeros(1, num_weeks/2);
 for weeks = (num_weeks/2+1):num_weeks 
     disp(weeks)
-    wk_return_d1_train = asset_returns(:, 1:weeks-1); %training
-    wk_return_d1_test = asset_returns(:, weeks); 
+    asset_return_d1_train = asset_returns(:, 1:weeks-1); %training
+    asset_return_d1_test = asset_returns(:, weeks); 
     rf = risk_free_rate(weeks); 
-    miu = mean(wk_return_d1_train, 2);
+    miu = mean(asset_return_d1_train, 2);
     portfolio_kpssd_all(:,weeks-num_weeks/2) = portfolio_kpssd(:, weeks);
 
-    Curr_week_temp = portfolio_kpssd(:, weeks)' * wk_return_d1_test - rf;
+    Curr_week_temp = portfolio_kpssd(:, weeks)' * asset_return_d1_test - rf;
     Curr_week_rt(weeks-num_weeks/2) = Curr_week_temp;
-    evar0 = Calmar_Var_p(weeks-num_weeks/2, asset_returns, portfolio_kpssd_all);
-    ratio_my = sum(Curr_week_rt) / (weeks-num_weeks/2) / evar0;
+    ratio0 = Calmar_Var_p(weeks-num_weeks/2, asset_returns, portfolio_kpssd_all);
+    ratio_my = sum(Curr_week_rt) / (weeks-num_weeks/2) / ratio0;
     ratio_kpssd(weeks-num_weeks/2) = ratio_my;
 end
 disp("KPSSD Ended")
@@ -228,16 +228,16 @@ portfolio_czesd_all = zeros(num_assets, num_weeks/2);
 ratio_czesd = zeros(1, num_weeks/2);
 for weeks = (num_weeks/2+1):num_weeks 
     disp(weeks)
-    wk_return_d1_train = asset_returns(:, 1:weeks-1); %training
-    wk_return_d1_test = asset_returns(:, weeks); 
+    asset_return_d1_train = asset_returns(:, 1:weeks-1); %training
+    asset_return_d1_test = asset_returns(:, weeks); 
     rf = risk_free_rate(weeks); 
-    miu = mean(wk_return_d1_train, 2);
+    miu = mean(asset_return_d1_train, 2);
     portfolio_czesd_all(:,weeks-num_weeks/2) = portfolio_czesd(:, weeks);
 
-    Curr_week_temp = portfolio_czesd(:, weeks)' * wk_return_d1_test - rf;
+    Curr_week_temp = portfolio_czesd(:, weeks)' * asset_return_d1_test - rf;
     Curr_week_rt(weeks-num_weeks/2) = Curr_week_temp;
-    evar0 = Calmar_Var_p(weeks-num_weeks/2, asset_returns, portfolio_czesd_all);
-    ratio_my = sum(Curr_week_rt) / (weeks-num_weeks/2) / evar0;
+    ratio0 = Calmar_Var_p(weeks-num_weeks/2, asset_returns, portfolio_czesd_all);
+    ratio_my = sum(Curr_week_rt) / (weeks-num_weeks/2) / ratio0;
     ratio_czesd(weeks-num_weeks/2) = ratio_my;
 end
 disp("CZESD Ended")
