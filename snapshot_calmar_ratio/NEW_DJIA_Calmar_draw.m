@@ -31,7 +31,6 @@ Equal_week_wk_rt = zeros(1, num_weeks/2);
 ratio_a = zeros(1, num_weeks/2);
 ratio_p_all = zeros(1, num_weeks/2);
 ratio_a_all = zeros(1, num_weeks/2);
-%solutions
 
 %CZeSD
 x_czesd = load('../data/BCST_Solutions/DowJones/OptPortfolios_CZeSD_DowJones.txt');
