@@ -4,15 +4,12 @@ clc,clear
 % Set display format to long
 format long;
 
-% Load data from file
-load('SP500.mat');
-
 % Get weekly prices of assets and index
-asset_prices = load('wk_price_FTSE', ',')';
-index_prices = load('b1_FTSE.txt', ',');
+asset_prices = load('wk_price_SP500', ',')';
+index_prices = load('b1_SP500.txt', ',');
 
 % Set output file path
-output_file = './UPDATE_FTSE_Calmar/';
+output_file = './UPDATE_SP500_Calmar/';
 
 % Load risk-free rate data
 risk_free_rate = load('rf_00_17.txt',',');

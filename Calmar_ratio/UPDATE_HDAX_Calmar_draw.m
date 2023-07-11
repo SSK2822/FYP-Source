@@ -4,6 +4,7 @@ clc,clear
 % Set display format to long
 format long;
 
+% Load data from file
 direc = './UPDATE_HDAX_Calmar/';
 flist = dir([direc, '*.txt']);
 asset_prices = load('wk_price_HDAX', ',')';
@@ -11,14 +12,16 @@ index_prices = load('b1_HDAX.txt', ','); %index
 
 risk_free_rate=load('rf_00_17.txt',','); %risk-free
 
+% Convert prices to returns
 [asset_returns, ~] = price2ret(asset_prices', [], 'Periodic'); %simple return
 asset_returns = asset_returns';
 [index_returns, ~] = price2ret(index_prices, [], 'Periodic'); %simple return
 
+% Get number of assets and weeks
 [num_assets, num_weeks] = size(asset_returns);
 risk_free_test = risk_free_rate(num_weeks/2+1:num_weeks);
 
-theta = 0.95;
+% Variable initial
 Curr_week_temp = 0; 
 Actual_week_rt_temp = 0;
 Equal_week_rt_temp = 0;
@@ -26,13 +29,11 @@ Equal_actual_week_rt_temp = 0;
 portfolio_weights_all = zeros(num_assets, num_weeks/2);
 equal_weights = 1 / num_assets * ones(num_assets, 1);
 equal_weights_all = 1 / num_assets * ones(num_assets, num_weeks/2);
-esr = zeros(1, num_weeks/2);
 ratio_ew = zeros(1, num_weeks/2);
 Curr_week_rt = zeros(1, num_weeks/2);
 Actual_week_rt = zeros(1, num_weeks/2);
 Equal_week_rt = zeros(1, num_weeks/2);
 Equal_week_wk_rt = zeros(1, num_weeks/2);
-esr_a = zeros(1, num_weeks/2);
 ratio_p_all = zeros(1, num_weeks/2);
 ratio_a_all = zeros(1, num_weeks/2);
 
@@ -41,7 +42,6 @@ for week = (num_weeks/2+1):num_weeks
     wk_return_d1_train = asset_returns(:, 1:week-1); %training
     wk_return_d1_test = asset_returns(:, week); 
     rf = risk_free_rate(week); 
-    miu = mean(wk_return_d1_train, 2);
     filename = flist(week-num_weeks/2);
     portfolio_weights = load(['./UPDATE_HDAX_Calmar/',filename.name]);
     portfolio_weights_all(:,week-num_weeks/2) = portfolio_weights;
@@ -74,19 +74,19 @@ for week = (num_weeks/2+1):num_weeks
 end
 
 %index
-esr_index = zeros(1, num_weeks/2);
+ratio_index = zeros(1, num_weeks/2);
 index_wk_rt = 0;
 for week = num_weeks/2+1:num_weeks
     index_wk_rt = index_wk_rt + index_returns(:, week) - risk_free_rate(:, week);
     evar_index = Calmar_Var_p_index(week-num_weeks/2, index_returns);
-    esr_index(:, week-num_weeks/2) = index_wk_rt / (week-num_weeks/2) / evar_index;
+    ratio_index(:, week-num_weeks/2) = index_wk_rt / (week-num_weeks/2) / evar_index;
 end
 
 ratio_p_all_yearly = ratio_p_all * (num_weeks/18)^0.5;
 ratio_a_all_yearly = ratio_a_all * (num_weeks/18)^0.5;
 actual_wk_rt_yearly = Actual_week_rt * (num_weeks/18)^0.5;
 ratio_ew_yearly = ratio_ew * (num_weeks/18)^0.5;
-ratio_index_yearly = esr_index * (num_weeks/18)^0.5;
+ratio_index_yearly = ratio_index * (num_weeks/18)^0.5;
 
 
 %Display output
@@ -120,7 +120,7 @@ plot(time, ratio_p_all(1:num_weeks/2), '--', 'linewidth', 1.6, 'markersize', mar
 hold on
 plot(time, ratio_ew(1:num_weeks/2), '-.', 'linewidth', 1.6, 'markersize', marksize, 'color', 'r');
 hold on
-plot(time, esr_index(1:num_weeks/2), ':', 'linewidth', 1.6, 'markersize', marksize, 'color', 'm');
+plot(time, ratio_index(1:num_weeks/2), ':', 'linewidth', 1.6, 'markersize', marksize, 'color', 'm');
 
 
 xlim([1 num_weeks/2])

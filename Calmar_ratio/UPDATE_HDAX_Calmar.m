@@ -20,15 +20,10 @@ asset_returns = asset_returns';
 [num_assets, num_weeks] = size(asset_returns);
 
 % Variable initial
-theta = 0.95;
 portfolio_weights = zeros(num_assets, 1);
 portfolio_weights_all = zeros(num_assets, num_weeks/2);
-equal_weights = 1 / num_assets * ones(num_assets, 1);
 calmar_ratio_a_all = zeros(1, num_weeks/2);
 calmar_ratio_p_all = zeros(1, num_weeks/2);
-nolinear_all = zeros(1, num_weeks/2);
-rho_all = zeros(1, num_weeks/2);
-ksi_all = zeros(num_assets, num_weeks/2);
 portfolio_return_all = zeros(1,num_weeks/2);
 
 % Loop over the second half of weeks
@@ -62,7 +57,6 @@ for week = (num_weeks/2+1):num_weeks
     portfolio_return_train = portfolio_weights' * mean(asset_returns_train, 2) - current_risk_free_rate;
     calmar_ratio_train = portfolio_return_train / Calmar_Var_a(week, asset_returns, portfolio_weights);
     calmar_ratio_a_all(week-num_weeks/2) = calmar_ratio_train;
-    
 
     % Save the results of portfolio weights to a file
     fid0 = fopen([output_file, 'xt_', num2str(week), '.txt'], 'w'); % Output file name
