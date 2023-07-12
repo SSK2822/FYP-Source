@@ -1,81 +1,97 @@
+% Clear workspace and command window
 clc,clear
+
+% Set display format to long
 format long;
 
-load('NASDAQ100.mat'); %stock price matrix(939 weeks)
-wk_return_d1 = Assets_Returns(1:596, :)';
-wk_return_b1 = Index_Returns(1:596, :)';
-[M, N] = size(wk_return_d1);
-file1 = './NEW_NASDAQ100_Pain/';
-%file2 = './NEW_NASDAQ100_ESR_rho/';
+% Load data from file
+load('NASDAQ100.mat');
 
-rf_00_17 = load('rf_04_16a.txt',','); %risk free
-rt_test = rf_00_17(N/2+1:N);
+% Get weekly returns of assets and index
+asset_returns = Assets_Returns(1:596, :)';
+index_returns = Index_Returns(1:596, :)';
 
-%Variable initial
+% Get number of assets and weeks
+[num_assets, num_weeks] = size(asset_returns);
+
+% Set output file path
+output_file = './NEW_NASDAQ100_Pain/';
+
+% Load risk-free rate data
+risk_free_rate = load('rf_04_16a.txt',',');
+
+% Get test risk-free rate
+test_risk_free_rate = risk_free_rate(num_weeks/2+1:num_weeks);
+
+% Set parameter theta
 theta = 0.95;
-xt = zeros(M, 1);
-xt_all = zeros(M, N/2);
-x_ew = 1 / M * ones(M, 1);
-ratio_a_all = zeros(1, N/2);
-ratio_p_all = zeros(1, N/2);
-nolinear_all = zeros(1, N/2);
-rho_all = zeros(1, N/2);
-My_wk_rt = zeros(1,N/2);
 
-for i = (N/2+1):N %training output:xt，sor_p：只计算i=470这一周
-    i
-    wk_return_d1_train = wk_return_d1(:, 1:i-1); %online setting 1-469ex-ante训练数据
-    wk_return_d1_test = wk_return_d1(:, i); %只去second period的第一周
-    rf = rf_00_17(i); %risk free
-    miu = mean(wk_return_d1_train, 2); %miu
-    if (miu < rf) %if no stock price greater than rf
-        fprintf('do not trade in week %d\n', i)
-        xt = zeros(M, 1); 
+% Initialize variables
+portfolio_weights = zeros(num_assets, 1);
+portfolio_weights_all = zeros(num_assets, num_weeks/2);
+equal_weights = 1 / num_assets * ones(num_assets, 1);
+Pain_ratio_a_all = zeros(1, num_weeks/2);
+Pain_ratio_p_all = zeros(1, num_weeks/2);
+nolinear_all = zeros(1, num_weeks/2);
+rho_all = zeros(1, num_weeks/2);
+portfolio_return_all = zeros(1,num_weeks/2);
+
+% Loop over the second half of weeks
+for week = (num_weeks/2+1):num_weeks
+    
+    % Display current week
+    disp(week)
+    
+    % Get training and test data for asset returns
+    asset_returns_train = asset_returns(:, 1:week-1);
+    asset_returns_test = asset_returns(:, week);
+    
+    % Get risk-free rate for current week
+    current_risk_free_rate = risk_free_rate(week);
+    
+    % Get mean return of assets for training data
+    mean_return_train = mean(asset_returns_train, 2);
+    
+    % Open output file for writing portfolio weights
+    fid0 = fopen([output_file, 'xt_', num2str(week), '.txt'], 'w');
+    
+    % Check if any asset has mean return higher than risk-free rate
+    if (mean_return_train < current_risk_free_rate)
+        % If not, do not trade and set portfolio weights to zero
+        fprintf('do not trade in week %d\n', week)
+        portfolio_weights = zeros(num_assets, 1); 
     else 
-        [xt, ksi, nolinear] = NNN_IG(i, wk_return_d1, rf_00_17, miu);
+        % If yes, use NNN_IG function to get portfolio weights and ksi
+        [portfolio_weights, rho, nolinear] = NNN_IG(week, asset_returns, risk_free_rate, mean_return_train);
     end     
-    xt_all(:, i-N/2) = xt;
-    %nolinear_all(i-N/2) = nolinear; 
-    %rho_all(i-N/2) = rho;
     
-    %sor_p
-    My_wk_rt_temp = xt' * wk_return_d1_test - rf;
-    My_wk_rt(i-N/2) = My_wk_rt_temp;
-    max_drawdown0 = Pain_Var_p(i-N/2, wk_return_d1, xt_all);
-    ratio_my = sum(My_wk_rt) / (i-N/2) / max_drawdown0;
-    ratio_p_all(i-N/2) = ratio_my;
+    % Save portfolio weights for current week
+    portfolio_weights_all(:, week-num_weeks/2) = portfolio_weights;
     
-%{    
-    %sor_a    
-    if (i<N)
-        rhot = rho;
-        My_wk_rt_a_temp = xt' * mean(wk_return_d1_train, 2) - rf;
-        ratio_a_my = My_wk_rt_a_temp / EVaR_a(i, wk_return_d1, xt, rhot, theta);
-        ratio_a_all(i-N/2) = ratio_a_my;
-    end
-
-    if (i == N)
-        My_wk_rt_a_temp = xt' * mean(wk_return_d1_train, 2) - rf;
-        ratio_a_my = My_wk_rt_a_temp / EVaR_a_cal(i, wk_return_d1, xt, theta);
-        ratio_a_all(i-N/2) = ratio_a_my;
-    end
- %}   
-    %保存每期的结果xt文件
-    fid0 = fopen([file1, 'xt_', num2str(i), '.txt'], 'w'); %写入文件的命名
-    for ii = 1:M
-        fprintf(fid0, '%.6f\t', xt(ii, 1));
+    % Write portfolio weights to output file
+    for ii = 1:num_assets
+        fprintf(fid0, '%.6f\t', portfolio_weights(ii, 1));
         fprintf(fid0, '\r\n');
     end
-    fclose(fid0);
     
+    % Close output file
+    fclose(fid0); 
+    
+    % Calculate portfolio return for test data
+    portfolio_return_test = portfolio_weights' * asset_returns_test - current_risk_free_rate;
+    
+    % Save portfolio return for current week
+    portfolio_return_all(week-num_weeks/2) = portfolio_return_test;
+    
+    % Calculate maximum drawdown for test data using Pain_Var_p function
+    max_drawdown_test = Pain_Var_p(week-num_weeks/2, asset_returns, portfolio_weights_all);
+    
+    % Calculate Pain ratio for test data using portfolio return and maximum drawdown
+    Pain_ratio_test = sum(portfolio_return_all) / (week-num_weeks/2) / max_drawdown_test;
+    
+    % Save Pain ratio for current week
+    Pain_ratio_p_all(week-num_weeks/2) = Pain_ratio_test;  
 end
 
-ratio_p_all* (N/18)^0.5; %update数据集
-ratio_p_all* (N/5.5)^0.5; %or 数据集
-rr = ratio_a_all* (N/18)^0.5;
-rr(1:5)
-
-ratiot_yearly = ratio_p_all*(N/26.25)^0.5;  %bsct DJIA数据集
-ratiot_yearly = ratio_p_all* (N/11.5)^0.5;  %bsct NASDAQ100数据集
-ratiot_yearly = ratio_p_all* (N/13.83)^0.5; %bsct FTSE100数据集
-ratiot_yearly = ratio_p_all* (N/11.5)^0.5;
+% Calculate Pain ratio for test data using different factors depending on the dataset
+Pain_ratio_bsct_NASDAQ100 = Pain_ratio_p_all* (num_weeks/11.5)^0.5;
