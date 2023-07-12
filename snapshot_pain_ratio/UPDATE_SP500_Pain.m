@@ -5,11 +5,11 @@ clc,clear
 format long;
 
 % Get weekly prices of assets and index
-asset_prices = load('wk_price_HSCI', ',')';
-index_prices = load('b1_HSCI.txt', ',');
+asset_prices = load('wk_price_SP500', ',')';
+index_prices = load('b1_SP500.txt', ',');
 
 % Set output file path
-output_file = './UPDATE_HSCI_Pain/';
+output_file = './UPDATE_SP500_Pain/';
 
 % Load risk-free rate data
 risk_free_rate = load('rf_00_17.txt',',');
@@ -62,7 +62,7 @@ for week = (num_weeks/2+1):num_weeks
         portfolio_weights = zeros(num_assets, 1); 
     else 
         % If yes, use NNN_IG_linear function to get portfolio weights and ksi
-        [portfolio_weights, ksi] = NNN_IG(week, asset_returns, risk_free_rate, mean_return_train);
+        [portfolio_weights, ksi] = NNN_IG_linear(week, asset_returns, risk_free_rate, mean_return_train);
      end     
     
     % Save portfolio weights for current week
