@@ -1,10 +1,14 @@
-function obj = odepseudo33(u, miu, rf, weeks, wk_return_train)
-%fmincon求解器
+function objective = odepseudo33(u, mean_return, risk_free_rate, week, asset_returns_train)
+% fmincon
 
-[M, ~] = size(wk_return_train);
-y = u(1:M, :);
-ita = u(M+1, :);
-obj = -(miu'*y-rf(weeks)*ita); % 注意公式33原式是max，所以要加负号求最小值
+% Get number of assets
+[num_assets, ~] = size(asset_returns_train);
 
+% Extract variables from input vector
+y = u(1:num_assets , :);
+ita = u(num_assets+1 , :);
+
+% Define objective function
+objective = -(mean_return'*y-risk_free_rate(week)*ita); 
 
 end

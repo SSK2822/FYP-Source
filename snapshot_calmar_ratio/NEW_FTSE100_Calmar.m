@@ -23,9 +23,6 @@ risk_free_rate = load('rf_02_16.txt',',');
 % Get test risk-free rate
 test_risk_free_rate = risk_free_rate(num_weeks/2+1:num_weeks);
 
-% Set parameter theta
-theta = 0.95;
-
 % Initialize variables
 portfolio_weights = zeros(num_assets, 1);
 portfolio_weights_all = zeros(num_assets, num_weeks/2);

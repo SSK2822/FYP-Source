@@ -18,7 +18,7 @@ lb = zeros(num_assets+1+week,1);
 nonlcon = @(u)nonlinear_constrain(u, week, asset_returns, theta, risk_free_rate);         
 % [c,ceq] = nonlinear_constrain([y0;ita0;rho0], week-1, asset_returns, theta, risk_free_rate)
 
-% fmincon search patternsearch search
+% fmincon search patternsearch search (usually nonconvex)
 MyValue = 4000;
 options = optimoptions('fmincon','Algorithm','sqp', 'MaxFunctionEvaluations',MyValue,...
     'ConstraintTolerance',1e-6,'MaxIterations',3000,'StepTolerance',1e-10);
@@ -36,13 +36,18 @@ options = optimoptions('fmincon','Algorithm','sqp', 'MaxFunctionEvaluations',MyV
 %     'Aeq',Aeq, 'beq', beq,'lb', lb,'ub',[],'nonlcon', nonlcon, 'options', options);
 %[result,~] = run(MultiStart,problem,10);
 %[result,~] = run(GlobalSearch,problem);
+
 %}
+
 
 yk_32 = result(1:num_assets, :);
 ita_32 = result(num_assets+1, :);
+% rho_32 = result(num_assets+2,:);
 ksi_32 = result(num_assets+2:end, :);
 xk_32 = yk_32/ita_32;
+
 portfolio_weights = xk_32;
+% rho = rho_32;
 ksi = ksi_32;
 [nolinear, ~] = nonlinear_constrain(result, week, asset_returns, theta, risk_free_rate);
 
