@@ -1,104 +1,103 @@
+% Clear workspace and command window
 clc,clear
+
+% Set display format to long
 format long;
 
-filedir = './UPDATE_SP500_Martin/';
-filelist = dir([filedir, '*.txt']);
-d1 = load('wk_price_SP500', ',')';
-b1 = load('SP500_historical_index', ',')'; %index
-rf_92_97=load('rf_00_17.txt',','); %risk-free
+% Load data from file
+direc = './UPDATE_SP500_Martin/';
+flist = dir([direc, '*.txt']);
+asset_prices = load('wk_price_SP500', ',')';
+index_prices = load('b1_SP500.txt', ','); %index
 
+risk_free_rate=load('rf_00_17.txt',','); %risk-free
 
-[wk_return_d1, ~] = price2ret(d1', [], 'Periodic'); %simple return
-wk_return_d1 = wk_return_d1';
-[wk_return_b1, ~] = price2ret(b1, [], 'Periodic'); %simple return
+% Convert prices to returns
+[asset_returns, ~] = price2ret(asset_prices', [], 'Periodic'); %simple return
+asset_returns = asset_returns';
+[index_returns, ~] = price2ret(index_prices, [], 'Periodic'); %simple return
 
-[M, N] = size(wk_return_d1);
-rf_test = rf_92_97(N/2+1:N);
+% Get number of assets and weeks
+[num_assets, num_weeks] = size(asset_returns);
+risk_free_test = risk_free_rate(num_weeks/2+1:num_weeks);
 
-My_wk_rt_temp = 0; 
-ac_wk_rt_temp = 0;
-ew_wk_rt_temp = 0;
-ew_ac_wk_rt_temp = 0;
-xt_all = zeros(M, N/2);
-x_ew = 1 / M * ones(M, 1);
-x_ew_all = 1 / M * ones(M, N/2);
-esr = zeros(1, N/2);
-esr_ew = zeros(1, N/2);
-My_wk_rt = zeros(1, N/2);
-ac_wk_rt = zeros(1, N/2);
-ew_wk_rt = zeros(1, N/2);
-ew_ac_wk_rt = zeros(1, N/2);
-esr_a = zeros(1, N/2);
-theta = 0.95;
-ratio_p_all = zeros(1, N/2);
-ratio_a_all = zeros(1, N/2);
+% Variable initial
+Curr_week_temp = 0; 
+Actual_week_rt_temp = 0;
+Equal_week_rt_temp = 0;
+Equal_actual_week_rt_temp = 0;
+portfolio_weights_all = zeros(num_assets, num_weeks/2);
+equal_weights = 1 / num_assets * ones(num_assets, 1);
+equal_weights_all = 1 / num_assets * ones(num_assets, num_weeks/2);
+ratio_ew = zeros(1, num_weeks/2);
+Curr_week_rt = zeros(1, num_weeks/2);
+Actual_week_rt = zeros(1, num_weeks/2);
+Equal_week_rt = zeros(1, num_weeks/2);
+Equal_week_wk_rt = zeros(1, num_weeks/2);
+ratio_p_all = zeros(1, num_weeks/2);
+ratio_a_all = zeros(1, num_weeks/2);
 
-for i = (N/2+1):N 
-    i
-    wk_return_d1_train = wk_return_d1(:, 1:i-1); %training
-    wk_return_d1_test = wk_return_d1(:, i); 
-    rf = rf_92_97(i); 
-    miu = mean(wk_return_d1_train, 2);
-    filename = filelist(i-N/2);
-    xt = load(['./UPDATE_SP500_Martin/',filename.name]);
-    xt_all(:,i-N/2) = xt;
+for week = (num_weeks/2+1):num_weeks 
+    disp(week)
+    wk_return_d1_train = asset_returns(:, 1:week-1); %training
+    wk_return_d1_test = asset_returns(:, week); 
+    rf = risk_free_rate(week); 
+    filename = flist(week-num_weeks/2);
+    portfolio_weights = load(['./UPDATE_SP500_Martin/',filename.name]);
+    portfolio_weights_all(:,week-num_weeks/2) = portfolio_weights;
     
     %Martin_ratio_p
-    My_wk_rt_temp = xt' * wk_return_d1_test - rf;
-    My_wk_rt(i-N/2) = My_wk_rt_temp;
-    max_drawdown0 = Martin_Var_p(i-N/2, wk_return_d1, xt_all);
-    ratio_my = sum(My_wk_rt) / (i-N/2) / max_drawdown0;
-    ratio_p_all(i-N/2) = ratio_my;
+    Curr_week_temp = portfolio_weights' * wk_return_d1_test - rf;
+    Curr_week_rt(week-num_weeks/2) = Curr_week_temp;
+    max_drawdown0 = Martin_Var_p(week-num_weeks/2, asset_returns, portfolio_weights_all);
+    ratio_my = sum(Curr_week_rt) / (week-num_weeks/2) / max_drawdown0;
+    ratio_p_all(week-num_weeks/2) = ratio_my;
 
     %cumulative return
-    ac_wk_rt_temp = ac_wk_rt_temp + xt' * wk_return_d1_test;
-    ac_wk_rt(i-N/2) = ac_wk_rt_temp;
+    Actual_week_rt_temp = Actual_week_rt_temp + portfolio_weights' * wk_return_d1_test;
+    Actual_week_rt(week-num_weeks/2) = Actual_week_rt_temp;
 
     %Martin_ratio_a
-    My_wk_rt_a_temp = xt' * mean(wk_return_d1_train, 2) - rf;
-    ratio_a_my = My_wk_rt_a_temp / Martin_Var_a(i, wk_return_d1, xt);
-    ratio_a_all(i-N/2) = ratio_a_my;
+    My_wk_rt_a_temp = portfolio_weights' * mean(wk_return_d1_train, 2) - rf;
+    ratio_a_my = My_wk_rt_a_temp / Martin_Var_a(week, asset_returns, portfolio_weights);
+    ratio_a_all(week-num_weeks/2) = ratio_a_my;
 
     %equally weighted
-    ew_wk_rt_temp = x_ew' * wk_return_d1_test - rf;
-    ew_wk_rt(i-N/2) = ew_wk_rt_temp;
-    ratio_ew = sum(ew_wk_rt) / (i-N/2) / Martin_Var_p(i-N/2, wk_return_d1, x_ew_all);
-    esr_ew(i-N/2) = ratio_ew;
-    
-    ew_ac_wk_rt_temp = ew_ac_wk_rt_temp + x_ew' * wk_return_d1_test;
-    ew_ac_wk_rt(i-N/2) = ew_ac_wk_rt_temp;
+    Equal_week_rt_temp = equal_weights' * wk_return_d1_test - rf;
+    Equal_week_rt(week-num_weeks/2) = Equal_week_rt_temp;
+    ratio_ew = sum(Equal_week_rt) / (week-num_weeks/2) / Martin_Var_p(week-num_weeks/2, asset_returns, equal_weights_all);
+    ratio_ew(week-num_weeks/2) = ratio_ew;
+
+    Equal_actual_week_rt_temp = Equal_actual_week_rt_temp + equal_weights' * wk_return_d1_test;
+    Equal_week_wk_rt(week-num_weeks/2) = Equal_actual_week_rt_temp;
     
 end
 
-%index怎么求
 %index
-esr_index = zeros(1, N/2);%初始化
+ratio_index = zeros(1, num_weeks/2);
 index_wk_rt = 0;
-for i = N/2+1:N
-    index_wk_rt = index_wk_rt + wk_return_b1(:, i) - rf_92_97(:, i);
-    %[~, evar_index, a] = fmincon(@(rho) EVaR_p_index(i, wk_return_b1, rho, theta), ...
-    %10, [], [], [], [], 0, [], []);
-    %disp(['index_p_cal:' num2str(a)]);
-    evar_index = Martin_Var_p_index(i-N/2, wk_return_b1);
-    esr_index(:, i-N/2) = index_wk_rt / (i-N/2) / evar_index;
+for week = num_weeks/2+1:num_weeks
+    index_wk_rt = index_wk_rt + index_returns(:, week) - risk_free_rate(:, week);
+    evar_index = Martin_Var_p_index(week-num_weeks/2, index_returns);
+    ratio_index(:, week-num_weeks/2) = index_wk_rt / (week-num_weeks/2) / evar_index;
 end
 
-ratio_p_all_yearly = ratio_p_all * (N/18)^0.5;
-ratio_a_all_yearly = ratio_a_all * (N/18)^0.5;
-ac_wk_rt_yearly = ac_wk_rt * (N/18)^0.5;
-esr_ew_yearly = esr_ew * (N/18)^0.5;
-esr_index_yearly = esr_index * (N/18)^0.5;
+ratio_p_all_yearly = ratio_p_all * (num_weeks/18)^0.5;
+ratio_a_all_yearly = ratio_a_all * (num_weeks/18)^0.5;
+actual_wk_rt_yearly = Actual_week_rt * (num_weeks/18)^0.5;
+ratio_ew_yearly = ratio_ew * (num_weeks/18)^0.5;
+ratio_index_yearly = ratio_index * (num_weeks/18)^0.5;
 
 
-%各个esr的最终值比较
+%Display output
 ratio_p_all_yearly(end)
 ratio_a_all_yearly(end)
-ac_wk_rt_yearly(end)
-esr_ew_yearly(end)
-esr_index_yearly(end)
+actual_wk_rt_yearly(end)
+ratio_ew_yearly(end)
+ratio_index_yearly(end)
 
 
-%开始画图
+%plotting
 time = [1:N/2];
 color=[1,0.84314,0;
        0.80392,0.36078,0.36078;
