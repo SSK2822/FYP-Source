@@ -5,20 +5,20 @@ clc,clear
 format long;
 
 % Load data from file
-load('NASDAQ100.mat');
+load('DowJones.mat');
 
 % Get weekly returns of assets and index
-asset_returns = Assets_Returns(1:596, :)';
-index_returns = Index_Returns(1:596, :)';
+asset_returns = Assets_Returns(1:1362, :)';
+index_returns = Index_Returns(1:1362, :)';
 
 % Get number of assets and weeks
 [num_assets, num_weeks] = size(asset_returns);
 
 % Set output file path
-output_file = './NEW_NASDAQ100_Martin/';
+output_file = './NEW_DJIA_Calmar/';
 
 % Load risk-free rate data
-risk_free_rate = load('rf_04_16a.txt',',');
+risk_free_rate = load('rf_90_16.txt',',');
 
 % Get test risk-free rate
 test_risk_free_rate = risk_free_rate(num_weeks/2+1:num_weeks);
@@ -30,10 +30,11 @@ theta = 0.95;
 portfolio_weights = zeros(num_assets, 1);
 portfolio_weights_all = zeros(num_assets, num_weeks/2);
 equal_weights = 1 / num_assets * ones(num_assets, 1);
-Martin_ratio_a_all = zeros(1, num_weeks/2);
-Martin_ratio_p_all = zeros(1, num_weeks/2);
+calmar_ratio_a_all = zeros(1, num_weeks/2);
+calmar_ratio_p_all = zeros(1, num_weeks/2);
 nolinear_all = zeros(1, num_weeks/2);
 rho_all = zeros(1, num_weeks/2);
+ksi_all = zeros(num_assets, num_weeks/2);
 portfolio_return_all = zeros(1,num_weeks/2);
 
 % Loop over the second half of weeks
@@ -61,8 +62,8 @@ for week = (num_weeks/2+1):num_weeks
         fprintf('do not trade in week %d\n', week)
         portfolio_weights = zeros(num_assets, 1); 
     else 
-        % If yes, use NNN_IG function to get portfolio weights and ksi
-        [portfolio_weights, rho, nolinear] = NNN_IG(week, asset_returns, risk_free_rate, mean_return_train);
+        % If yes, use NNN_IG_linear function to get portfolio weights and ksi
+        [portfolio_weights, ksi] = NNN_IG_linear(week, asset_returns, risk_free_rate, mean_return_train); 
     end     
     
     % Save portfolio weights for current week
@@ -83,15 +84,20 @@ for week = (num_weeks/2+1):num_weeks
     % Save portfolio return for current week
     portfolio_return_all(week-num_weeks/2) = portfolio_return_test;
     
-    % Calculate maximum drawdown for test data using Martin_Var_p function
-    max_drawdown_test = Martin_Var_p(week-num_weeks/2, asset_returns, portfolio_weights_all);
+    % Calculate maximum drawdown for test data using Calmar_Var_p function
+    max_drawdown_test = Calmar_Var_p(week-num_weeks/2, asset_returns, portfolio_weights_all);
     
-    % Calculate Martin ratio for test data using portfolio return and maximum drawdown
-    Martin_ratio_test = sum(portfolio_return_all) / (week-num_weeks/2) / max_drawdown_test;
+    % Calculate Calmar ratio for test data using portfolio return and maximum drawdown
+    calmar_ratio_test = sum(portfolio_return_all) / (week-num_weeks/2) / max_drawdown_test;
     
-    % Save Martin ratio for current week
-    Martin_ratio_p_all(week-num_weeks/2) = Martin_ratio_test;  
+    % Save Calmar ratio for current week
+    calmar_ratio_p_all(week-num_weeks/2) = calmar_ratio_test;  
 end
 
-% Calculate Martin ratio for test data using different factors depending on the dataset
-Martin_ratio_bsct_NASDAQ100 = Martin_ratio_p_all* (num_weeks/11.5)^0.5;
+% Calculate annualized Calmar ratio for test data using different factors depending on the dataset
+calmar_ratio_annualized_or = calmar_ratio_p_all* (num_weeks/5.5)^0.5;
+calmar_ratio_annualized_update = calmar_ratio_p_all* (num_weeks/18)^0.5;
+calmar_ratio_annualized_bsct_DJIA = calmar_ratio_p_all*(num_weeks/26.25)^0.5;
+calmar_ratio_annualized_bsct_NASDAQ100 = calmar_ratio_p_all* (num_weeks/11.5)^0.5;
+calmar_ratio_annualized_bsct_FTSE100 = calmar_ratio_p_all* (num_weeks/13.83)^0.5;
+
