@@ -297,7 +297,7 @@ xticklabels({'2011', '2012', '2013', '2014', '2015', '2016'})
 h = legend('NO$_{\rm \bf a}$', 'NO$_{\rm \bf p}$', 'EW', 'MI');
 set(h,'fontsize',fontsize_legend, 'interpreter', 'latex');
 set(gca, 'linewidth', linewidth_gca, 'fontsize', fontsize_gca);
-ylabel('ESR$_{\rm \bf p}$vs ESR$_{\rm \bf a}$', 'interpreter', 'latex', 'fontsize', fontsize_label)   ;
+ylabel('CR$_{\rm \bf p}$vs CR$_{\rm \bf a}$', 'interpreter', 'latex', 'fontsize', fontsize_label)   ;
 title('NASDAQ 100');
 hold on
 
