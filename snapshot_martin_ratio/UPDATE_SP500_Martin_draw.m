@@ -130,15 +130,14 @@ xticklabels({'2010', '2012', '2014', '2016' '2018'})
 h = legend('NO$_{\rm \bf a}$', 'NO$_{\rm \bf p}$', 'EW', 'MI');
 set(h,'fontsize',fontsize_legend, 'interpreter', 'latex','Location','NorthWest');
 set(gca, 'linewidth', linewidth_gca, 'fontsize', fontsize_gca);
-%set(gca, 'GridLineStyle', '--');
 ylabel('MR$_{\rm \bf a}$vs MR$_{\rm \bf p}$', 'interpreter', 'latex', 'fontsize', fontsize_label)   ;
-title('SP500'); % 标题
+title('SP500');
 hold on
 
 hfig3 = figure(3);
-figWidth = 16;  % 设置图片宽度
-figHeight = 10;  % 设置图片高度
-set(hfig3,'PaperUnits','centimeters'); % 图片尺寸所用单位
+figWidth = 16;  
+figHeight = 10;  
+set(hfig3,'PaperUnits','centimeters'); 
 set(hfig3,'PaperPosition',[0 0 figWidth figHeight]);
 
 filefigures = './figures_new/';
