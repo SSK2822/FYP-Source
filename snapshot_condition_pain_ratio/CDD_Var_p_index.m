@@ -9,7 +9,10 @@ for week = 1:weeks
     for i = 1:week
         accu_return(i) = sum(rj(:,1:i));
     end
-    Drawdown(week) = max(accu_return)-sum(rj);
+    Drawdown(week) = max(accu_return)-sum(rj);    
 end
-CDD_Drawdown0 = rho + 1/(weeks*(1-theta))*sum(max(Drawdown-rho,0));
+
+maxi = max(Drawdown-rho,0);
+val = weeks*(1-theta);
+CDD_Drawdown0 = rho + 1/(val)*sum(maxi);
 end
