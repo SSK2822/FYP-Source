@@ -1,6 +1,4 @@
 function [CDD_VaR0] = CDD_Var_p_cal(weeks, wk_return_d1, xt_all, theta)
-%wk_return_d1:the whole dataset, rb:vector
-
 MyValue = 1000;
 options = optimoptions('fmincon','Algorithm','sqp', 'MaxFunctionEvaluations',MyValue,...
     'ConstraintTolerance',1e-6,'MaxIterations',800,'StepTolerance',1e-8);

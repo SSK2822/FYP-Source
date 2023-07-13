@@ -1,7 +1,4 @@
 function [CDD_Drawdown0] = CDD_Var_p_index(weeks, wk_return_b1, rho, theta)
-%whole dataset input, x is decision matrix(multi-period)
-%used for ex-post version
-%weeks: the ith weeks of test data
 [~, N] = size(wk_return_b1);
 wk_return = wk_return_b1(:, N/2+1:end);
 Drawdown = zeros(1, weeks);

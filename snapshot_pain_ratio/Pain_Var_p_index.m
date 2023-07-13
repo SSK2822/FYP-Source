@@ -1,18 +1,15 @@
-function [Avg_Drawdown0] = Pain_Var_p_index(weeks, wk_return_b1)
-%whole dataset input, x is decision matrix(multi-period)
-%used for ex-post version
-%weeks: the ith weeks of test data
-[~, N] = size(wk_return_b1);
-wk_return = wk_return_b1(:, N/2+1:end);
-Drawdown = zeros(1, weeks);
+function [average_drawdown] = Pain_Var_p_index(week, index_returns)
+[~, num_weeks] = size(index_returns);
+index_returns_test = index_returns(:, num_weeks/2+1:end);
+drawdown = zeros(1, week);
 
-for week = 1:weeks
-    rj = wk_return(:, 1:week);
-    accu_return = zeros(1, week);
-    for i = 1:week
-        accu_return(i) = sum(rj(:, 1:i));
+for j = 1:week
+    rj = index_returns_test(:, 1:j); 
+    cumulative_return = zeros(1, j);
+    for i = 1:j
+        cumulative_return(i) = sum(rj(:, 1:i));
     end
-    Drawdown(week) = max(accu_return)-sum(rj);
+    drawdown(j) = max(cumulative_return)-sum(rj);
 end
-Avg_Drawdown0 = sum(Drawdown)/weeks;
+average_drawdown = sum(drawdown)/week;
 end

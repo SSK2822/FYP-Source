@@ -1,9 +1,6 @@
-function [Max_Drawdown0] = Calmar_Var_p_index(weeks, wk_return_b1)
-%whole dataset input, x is decision matrix(multi-period)
-%used for ex-post version
-%weeks: the ith weeks of test data
-[~, N] = size(wk_return_b1);
-wk_return = wk_return_b1(:, N/2+1:end);
+function [Max_Drawdown0] = Calmar_Var_p_index(weeks, index_returns)
+[~, Num_weeks] = size(index_returns);
+wk_return = index_returns(:, Num_weeks/2+1:end);
 Drawdown = zeros(1, weeks);
 
 for week = 1:weeks
