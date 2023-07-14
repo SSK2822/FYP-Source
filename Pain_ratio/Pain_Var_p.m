@@ -1,5 +1,4 @@
 function [average_drawdown] = Pain_Var_p(week, asset_returns, portfolio_weights_all)
-set_returns);
 asset_returns_test = asset_returns(:, num_weeks/2+1:end);
 drawdown = zeros(1, week); 
 
