@@ -68,7 +68,7 @@ for week = (num_weeks/2+1):num_weeks
     
     % Save portfolio weights for current week
     portfolio_weights_all(:, week-num_weeks/2) = portfolio_weights;
-    rho_all(week-N/2) = rho;
+    rho_all(week-num_weeks/2) = rho;
 
     % Write portfolio weights to output file
     for ii = 1:num_assets
