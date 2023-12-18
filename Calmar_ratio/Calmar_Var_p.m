@@ -12,7 +12,7 @@ for week = 1:weeks
         accu_return(i) =  sum(diag(rkk'*xtt));
     end
     
-    Drawdown(week) = max(accu_return)-sum(diag(rj'*portfolio_all(:, 1:week))); %week期的maximum drawndown
+    Drawdown(week) = max(accu_return)-sum(diag(rj'*portfolio_all(:, 1:week))); 
 end
 Max_Drawdown0 = max(Drawdown);
 
